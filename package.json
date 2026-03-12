@@ -5,10 +5,11 @@
     "scripts": {
         "build": "webpack",
         "test": "webpack && mkdir -p src/reports && cross-env K6_TEST_TYPE=smoke K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=src/reports/test-exemplo-smoke.html k6 run dist/exemplo-test.js --summary-export=src/reports/test-exemplo-smoke.json",
-        "lint": "npx eslint . --ext .ts",
-        "lint:fix": "npx eslint . --ext .ts --fix",
         "test-smoke": "webpack && mkdir -p src/reports && cross-env K6_TEST_TYPE=smoke K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=src/reports/test-exemplo-smoke.html k6 run dist/exemplo-test.js --summary-export=src/reports/test-exemplo-smoke.json",
-        "test-break": "webpack && mkdir -p src/reports && cross-env K6_TEST_TYPE=break K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=src/reports/test-exemplo-break.html k6 run dist/exemplo-test.js --summary-export=src/reports/test-exemplo-break.json"
+        "lint": "npx eslint . --ext .ts",
+        "lint:fix": "npx eslint . --ext .ts --fix"
+       
+        
     },
     "repository": {
         "type": "git"
