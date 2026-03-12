@@ -1,0 +1,43 @@
+name: Testes de Performance K6
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  k6:
+    runs-on: ubuntu-22.04
+
+    env:
+      BASE_URL_TEST: ${{ secrets.BASE_URL_TEST || 'https://jsonplaceholder.typicode.com' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Rodar teste break (5 min, 500 VUs)
+        run: npm run test-break
+
+      - name: Upload relatório HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-report-break
+          path: src/reports/

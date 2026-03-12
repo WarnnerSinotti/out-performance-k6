@@ -1,0 +1,122 @@
+# Pipeline: Playwright (E2E) → K6 (Performance) → WebdriverIO (Mobile)
+# Os 3 projetos são repositórios separados. Ajuste REPO_ORG se sua org tiver outro nome.
+#
+# Requisitos: Os 3 repos devem estar na mesma organização (ou use secrets para tokens).
+
+name: Pipeline Playwright → K6 → WebdriverIO
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REPO_ORG: ${{ github.repository_owner }}
+
+jobs:
+  playwright:
+    name: E2E + Integrado (Playwright)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPO_ORG }}/out-e2e-playwright
+          path: playwright
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: playwright/package-lock.json
+
+      - name: Instalar dependências Playwright
+        working-directory: playwright
+        run: npm ci || npm install
+
+      - name: Rodar testes Playwright
+        working-directory: playwright
+        run: npm run test
+        # Ajuste: npm run test:e2e, npx playwright test, etc.
+
+      - name: Upload artifacts (falha)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright/test-results
+
+  k6:
+    name: Performance (K6)
+    runs-on: ubuntu-22.04
+    needs: playwright
+
+    env:
+      BASE_URL_TEST: ${{ secrets.BASE_URL_TEST || 'https://jsonplaceholder.typicode.com' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPO_ORG }}/out-performance-k6
+          path: k6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: k6/package-lock.json
+
+      - name: Instalar k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Instalar dependências e rodar K6
+        working-directory: k6
+        run: |
+          npm ci || npm install
+          npm run test-break
+
+      - name: Upload relatório K6
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-report
+          path: k6/src/reports/
+
+  webdriver:
+    name: Mobile (WebdriverIO)
+    runs-on: ubuntu-22.04
+    needs: k6
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPO_ORG }}/out-e2e-webdriverIO
+          path: webdriver
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: webdriver/package-lock.json
+
+      - name: Instalar dependências WebdriverIO
+        working-directory: webdriver
+        run: npm ci || npm install
+
+      - name: Rodar testes WebdriverIO
+        working-directory: webdriver
+        run: npm run test
+        # Ajuste: npm run wdio, npx wdio run, etc.
+
+      - name: Upload artifacts (falha)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webdriver-report
+          path: webdriver/allure-results
