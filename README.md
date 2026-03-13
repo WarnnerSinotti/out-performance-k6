@@ -1,4 +1,4 @@
-# 🎉 Bem-vindo ao Projeto de Testes de Performance! 💻
+# out-performance-k6
 
 Neste projeto, exploramos o desempenho e a resiliência da API, investigando até onde ela pode chegar e garantindo que esteja pronta para lidar com situações de alta carga. A missão é identificar pontos críticos, detectar gargalos e garantir que o sistema ofereça uma experiência robusta aos usuários.
 
