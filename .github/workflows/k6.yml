@@ -33,11 +33,11 @@ jobs:
       - name: Instalar dependências
         run: npm install
 
-      - name: Rodar teste break (5 min, 500 VUs)
-        run: npm run test-break
+      - name: Rodar teste smoke (5 min, 500 VUs)
+        run: npm run test-smoke
 
       - name: Upload relatório HTML
         uses: actions/upload-artifact@v4
         with:
-          name: k6-report-break
+          name: k6-report-smoke
           path: src/reports/
