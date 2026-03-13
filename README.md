@@ -94,10 +94,12 @@ Após a execução, os relatórios são gerados automaticamente na pasta `src/re
 | Workflow      | Descrição                                          |
 |---------------|----------------------------------------------------|
 | `k6.yml`      | Teste K6 standalone (test-break)                   |
-| `pipeline.yml`| Playwright → K6 → WebdriverIO (3 repos em sequência)|
 
 Detalhes em [.github/workflows/PIPELINE.md](.github/workflows/PIPELINE.md).
 
+**Quando rodar só K6:** use o workflow **Testes de Performance K6** neste repositório (workflow_dispatch, push ou PR na main).
+
+**Pipeline completo:** rodar no repositório [out-test-pipeline](https://github.com/WarnnerSinotti/out-test-pipeline/actions).
 ---
 
 # 🗂️ Estrutura de Pastas do Projeto
