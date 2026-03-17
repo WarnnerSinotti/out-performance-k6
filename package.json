@@ -4,8 +4,12 @@
     "description": "Projeto de testes de Performance e Stress",
     "scripts": {
         "build": "webpack",
-        "test": "webpack && mkdir -p src/reports && cross-env K6_TEST_TYPE=smoke K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=src/reports/test-exemplo-smoke.html k6 run dist/exemplo-test.js --summary-export=src/reports/test-exemplo-smoke.json",
-        "test-smoke": "webpack && mkdir -p src/reports && cross-env K6_TEST_TYPE=smoke K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=src/reports/test-exemplo-smoke.html k6 run dist/exemplo-test.js --summary-export=src/reports/test-exemplo-smoke.json",
+        "test": "npm run test-smoke",
+        "test-smoke": "cross-env K6_TEST_TYPE=smoke npm run test:k6",
+        "test-load": "cross-env K6_TEST_TYPE=load npm run test:k6",
+        "test-spike": "cross-env K6_TEST_TYPE=spike npm run test:k6",
+        "test-soak": "cross-env K6_TEST_TYPE=soak npm run test:k6",
+        "test:k6": "webpack && mkdir -p src/reports && cross-env K6_WEB_DASHBOARD=true k6 run dist/exemplo-test.js --summary-export=src/reports/summary-${K6_TEST_TYPE:-smoke}.json",
         "lint": "npx eslint . --ext .ts",
         "lint:fix": "npx eslint . --ext .ts --fix"
        

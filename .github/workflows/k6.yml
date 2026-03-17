@@ -2,6 +2,19 @@ name: Testes de Performance K6
 
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: "Perfil de teste"
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - load
+          - spike
+          - soak
+  schedule:
+    - cron: "0 2 * * *"
   push:
     branches: [main]
   pull_request:
@@ -33,11 +46,31 @@ jobs:
       - name: Instalar dependências
         run: npm install
 
-      - name: Rodar teste smoke (5 min, 500 VUs)
-        run: npm run test-smoke
+      - name: Determinar perfil
+        id: profile
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "Nightly run - executando load e soak"
+            echo "profiles=load soak" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "profiles=${{ github.event.inputs.profile }}" >> $GITHUB_OUTPUT
+          else
+            echo "Push/PR - smoke"
+            echo "profiles=smoke" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Upload relatório HTML
+      - name: Rodar testes de performance
+        run: |
+          for profile in ${{ steps.profile.outputs.profiles }}; do
+            echo "Executando perfil: $profile"
+            npx cross-env K6_TEST_TYPE=$profile npm run test:k6
+          done
+
+      - name: Upload relatórios (HTML + summary)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: k6-report-smoke
+          name: k6-reports-${{ github.run_number }}
           path: src/reports/
+          retention-days: 14
+          if-no-files-found: warn

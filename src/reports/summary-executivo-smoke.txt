@@ -1,0 +1,4 @@
+=== RESUMO EXECUTIVO ===
+Iterations: - (0.00/s)
+HTTP Requests: - (0.00/s)
+Checks: 0.00% pass (0 ok, 0 fail)

@@ -65,6 +65,13 @@ const external_k6_namespaceObject = require("k6");
 ;// external "k6/metrics"
 const metrics_namespaceObject = require("k6/metrics");
 ;// ./src/config/configTest.ts
+const sliThresholds = {
+  http_req_failed: ["rate<0.01"],
+  http_req_duration: ["p(95)<3000", "p(99)<6000"],
+  "http_req_duration{name:GetPosts}": ["p(95)<3000", "p(99)<6000"],
+  http_reqs: ["rate>5"],
+  checks: ["rate>0.99"]
+};
 const testOptions = {
   spike: {
     stages: [{
@@ -74,9 +81,7 @@ const testOptions = {
       duration: "1m",
       target: 0
     }],
-    thresholds: {
-      http_req_failed: ["rate<0.1"]
-    }
+    thresholds: sliThresholds
   },
   load: {
     stages: [{
@@ -89,25 +94,32 @@ const testOptions = {
       duration: "1m",
       target: 0
     }],
-    thresholds: {
-      http_req_failed: ["rate<0.1"]
-    }
+    thresholds: sliThresholds
   },
   smoke: {
     vus: 500,
     duration: "5m",
-    thresholds: {
-      http_req_failed: ["rate<0.1"]
-    }
+    thresholds: sliThresholds
+  },
+  soak: {
+    stages: [{
+      duration: "5m",
+      target: 30
+    }, {
+      duration: "30m",
+      target: 30
+    }, {
+      duration: "5m",
+      target: 0
+    }],
+    thresholds: sliThresholds
   },
   break: {
     stages: [{
       duration: "5m",
       target: 500
     }],
-    thresholds: {
-      http_req_failed: ["rate<0.1"]
-    }
+    thresholds: sliThresholds
   },
   averageLoad: {
     stages: [{
@@ -120,9 +132,7 @@ const testOptions = {
       duration: "5m",
       target: 0
     }],
-    thresholds: {
-      http_req_failed: ["rate<0.1"]
-    }
+    thresholds: sliThresholds
   }
 };
 function getOptions(testType) {
@@ -139,12 +149,11 @@ function exemploGetFunction() {
   const params = {
     headers: {
       "Content-Type": "application/json"
-      // Não adicionamos o token, pois a API não exige autenticação
-      // token: 'token',
+    },
+    tags: {
+      name: "GetPosts"
     }
   };
-
-  // Faz a requisição HTTP GET
   const response = http_default().get(url, params);
   return {
     status: response.status,
@@ -162,33 +171,30 @@ function exemploGetFunction() {
 const testType = __ENV.K6_TEST_TYPE || "smoke";
 const options = getOptions(testType);
 function handleSummary(data) {
+  const profile = __ENV.K6_TEST_TYPE || "smoke";
   return {
-    "src/reports/test-exemplo.html": (0,bundle_js_namespaceObject.htmlReport)(data),
+    [`src/reports/test-exemplo-${profile}.html`]: (0,bundle_js_namespaceObject.htmlReport)(data),
     stdout: (0,index_js_namespaceObject.textSummary)(data, {
       indent: " ",
       enableColors: true
     })
   };
 }
-
-// Métricas personalizadas
-const getElementDurationTimeTrend = new metrics_namespaceObject.Trend("OUT_Tempo_Duracao");
-const getElementWaitingTimeTrend = new metrics_namespaceObject.Trend("OUT_Tempo_Espera");
-const getElementSuccessRate = new metrics_namespaceObject.Rate("OUT_Percentual_Sucesso");
+const successRate = new metrics_namespaceObject.Rate("OUT_Percentual_Sucesso");
 /* harmony default export */ function exemplo_test() {
   try {
     const apigetElement = exemploGetFunction();
     (0,external_k6_namespaceObject.check)(apigetElement, {
       "Get element API returned status 200": res => res.status === 200
     });
-    getElementDurationTimeTrend.add(apigetElement.timings.duration);
-    getElementWaitingTimeTrend.add(apigetElement.timings.waiting);
-    getElementSuccessRate.add(apigetElement.status === 200);
-    console.log(`Status: ${apigetElement.status}`);
-    console.log(`Response Body: ${JSON.stringify(apigetElement.body)}`);
+    successRate.add(apigetElement.status === 200);
+    if (apigetElement.status !== 200) {
+      console.warn(`[Falha] Status: ${apigetElement.status}, Body: ${JSON.stringify(apigetElement.body)}`);
+    }
     (0,external_k6_namespaceObject.sleep)(1);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error: ${msg}`);
   }
 }
 var __webpack_export_target__ = exports;

@@ -6,14 +6,10 @@ export function exemploGetFunction() {
   const url = `${baseUrl}/posts`;
 
   const params: RefinedParams<ResponseType> = {
-    headers: {
-      "Content-Type": "application/json",
-      // Não adicionamos o token, pois a API não exige autenticação
-      // token: 'token',
-    },
+    headers: { "Content-Type": "application/json" },
+    tags: { name: "GetPosts" },
   };
 
-  // Faz a requisição HTTP GET
   const response: RefinedResponse<ResponseType> = http.get(url, params);
 
   return {
